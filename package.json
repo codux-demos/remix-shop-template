@@ -1,0 +1,59 @@
+{
+  "name": "remix-shop-template",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "build": "remix vite:build",
+    "dev": "remix vite:dev",
+    "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+    "start": "netlify serve",
+    "typecheck": "tsc",
+    "deploy:dev": "netlify deploy --build",
+    "deploy:prod": "netlify deploy --build --prod"
+  },
+  "dependencies": {
+    "@netlify/functions": "^2.7.0",
+    "@netlify/remix-adapter": "^2.4.0",
+    "@remix-run/node": "^2.9.2",
+    "@remix-run/react": "^2.9.2",
+    "@remix-run/serve": "^2.9.2",
+    "isbot": "^5.1.9",
+    "@radix-ui/react-icons": "^1.3.0",
+    "@types/node": "^20.14.5",
+    "@wix/ecom": "^1.0.607",
+    "@wix/redirects": "^1.0.48",
+    "@wix/sdk": "^1.10.2",
+    "@wix/stores": "^1.0.158",
+    "classnames": "^2.5.1",
+    "js-cookie": "^3.0.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1",
+    "swr": "^2.2.5"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^2.9.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vite-tsconfig-paths": "^4.3.2",
+    "@faker-js/faker": "^8.4.1",
+    "@types/js-cookie": "^3.0.6",
+    "@wixc3/react-board": "^2.5.0",
+    "sass": "^1.77.6",
+    "vite-plugin-svgr": "^4.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
