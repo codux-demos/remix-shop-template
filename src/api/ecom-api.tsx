@@ -7,9 +7,14 @@ import { ROUTES } from '../router/config';
 
 // this is the static ID of the stores app
 const WIX_STORES_APP_ID = '1380b703-ce81-ff05-f115-39571d94dfcd';
+const CLIENT_ID =
+    import.meta.env.VITE_WIX_CLIENT_ID ||
+    process.env.VITE_WIX_CLIENT_ID ||
+    /* this is the Wix demo store id (it's not a secret). */
+    '0c9d1ef9-f496-4149-b246-75a2514b8c99';
 export const WIX_SESSION_TOKEN = 'wix_refreshToken';
 
-function getTokens() {
+function getTokensClient() {
     const tokens = Cookies.get(WIX_SESSION_TOKEN);
     return tokens ? JSON.parse(tokens) : undefined;
 }
@@ -22,8 +27,8 @@ function getWixClient() {
             redirects,
         },
         auth: OAuthStrategy({
-            clientId: import.meta.env.VITE_WIX_CLIENT_ID || process.env.VITE_WIX_CLIENT_ID || '',
-            tokens: getTokens(),
+            clientId: CLIENT_ID,
+            tokens: getTokensClient(),
         }),
     });
 }
