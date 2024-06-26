@@ -39,7 +39,7 @@ export default function App() {
 }
 
 export function ErrorBoundary() {
-    const error = useRouteError();
+    let error = useRouteError();
 
     if (isRouteErrorResponse(error)) {
         return (
@@ -52,10 +52,21 @@ export function ErrorBoundary() {
         );
     }
 
+    if (error instanceof Error) {
+        error = error.message;
+    } else {
+        error = JSON.stringify(error);
+    }
+
     return (
-        <>
-            <h1>Error!</h1>
-            <p>{JSON.stringify(error)}</p>
-        </>
+        <section
+            style={{
+                color: 'red',
+                fontSize: 18,
+                textAlign: 'center',
+            }}
+        >
+            {String(error)}
+        </section>
     );
 }
