@@ -28,3 +28,5 @@ export const ThankYouPage = ({ className }: ThankYouPageProps) => {
         </div>
     );
 };
+
+export default ThankYouPage;

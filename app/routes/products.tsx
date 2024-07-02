@@ -20,7 +20,7 @@ export default function ProductsPage({ className }: ProductsPageProps) {
 
     return (
         <div className={classNames(styles.root, className)}>
-            <h1 className={styles.title}>All Products</h1>
+            <h1 className={styles.title}>All sdffsf Products</h1>
             <div className={styles.gallery}>
                 {myProducts?.map(
                     (item) =>
