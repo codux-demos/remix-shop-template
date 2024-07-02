@@ -10,6 +10,8 @@ import { createRemixStub } from '@remix-run/testing';
 import { LoaderFunction } from '@remix-run/node';
 import './app.global.css';
 type RouteObject = Parameters<typeof createRemixStub>[0][0];
+
+const createEl = React.createElement;
 const manifestToRouter = (
     manifest: IReactAppManifest<RouteExtraInfo>,
     requireModule: (filePath: string) => {
@@ -95,11 +97,7 @@ function lazyCompAndLoader<ExportName extends string>(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const Layout = Page as any;
             return {
-                default: () => (
-                    <Layout>
-                        <Outlet></Outlet>
-                    </Layout>
-                ),
+                default: () => createEl(Layout, {}, [createEl(Outlet)]),
             };
         }
         return {
@@ -246,7 +244,10 @@ export default ${pageName};
                 }
                 return null;
             });
-            return routeDirChildren.filter((r): r is RouteInfo<RouteExtraInfo> => !!r);
+            const routes = routeDirChildren.filter((r): r is RouteInfo<RouteExtraInfo> => !!r);
+            return routes.sort(
+                (a, b) => a.path.length - b.path.length
+            ) as RouteInfo<RouteExtraInfo>[];
         };
 
         const watcher = fs.watch(routeDir, {
