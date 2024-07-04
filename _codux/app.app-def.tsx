@@ -227,7 +227,7 @@ export default ${pageName};
 
                     return route(
                         routeParts.map((p) => {
-                            if (p.startsWith('*')) {
+                            if (p.startsWith('$')) {
                                 return {
                                     kind: 'dynamic' as const,
                                     name: p.slice(1, -1),

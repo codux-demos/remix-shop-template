@@ -11,7 +11,7 @@ export interface HomePageProps {
     className?: string;
 }
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction<typeof loader> = () => {
     return [
         { title: 'Ecom Template' },
         { name: 'description', content: 'Welcome to the Ecom Template' },
@@ -38,7 +38,7 @@ export default function HomePage({ className }: HomePageProps) {
                 topLabelClassName={styles['top-label-highlighted']}
                 onButtonClick={() => navigate(ROUTES.products.to())}
             />
-            <h1 className={styles['hero-title']}>Befghfhst Sellers</h1>
+            <h1 className={styles['hero-title']}>Best Sellers</h1>
             <p className={styles.bestSeller}>Shop our best seller items</p>
             <div className={styles.cardsLayout}>
                 {products?.map((product) =>
