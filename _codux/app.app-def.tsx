@@ -15,50 +15,63 @@ import { LoaderFunction } from '@remix-run/node';
 type RouteObject = Parameters<typeof createRemixStub>[0][0];
 
 const createEl = React.createElement;
-const manifestToRouter = (manifest: IAppManifest<RouteExtraInfo>, requireModule: RequireModule) => {
-    const Router = createRemixStub(
-        manifest.routes.map((route) => {
+
+const pageToRoute = (
+    page: PageInfo<RouteExtraInfo>,
+    requireModule: RequireModule,
+    path?: string
+) => {
+    const { Component, loader } = getLazyCompAndLoader(
+        page.pageModule,
+        page.pageExportName || 'default',
+        requireModule
+    );
+
+    let routeObject: RouteObject = {
+        path,
+        Component,
+        loader,
+    };
+    if (page.parentLayouts) {
+        for (const layout of page.parentLayouts.reverse()) {
             const { Component, loader } = getLazyCompAndLoader(
-                route.pageModule,
-                route.pageExportName || 'default',
-                requireModule
+                layout.layoutModule,
+                layout.layoutExportName || 'default',
+                requireModule,
+                layout.layoutExportName === 'Layout'
             );
-
-            const path =
-                '/' +
-                route.path
-                    .map((part) => {
-                        if (part.kind === 'static') {
-                            return part.text;
-                        }
-                        return `:${part.name}`;
-                    })
-                    .join('/');
-
-            let page: RouteObject = {
-                path,
+            routeObject = {
                 Component,
                 loader,
+                path,
+                children: [routeObject],
             };
-            if (route.parentLayouts) {
-                for (const layout of route.parentLayouts.reverse()) {
-                    const { Component, loader } = getLazyCompAndLoader(
-                        layout.layoutModule,
-                        layout.layoutExportName || 'default',
-                        requireModule,
-                        layout.layoutExportName === 'Layout'
-                    );
-                    page = {
-                        Component,
-                        loader,
-                        path,
-                        children: [page],
-                    };
-                }
-            }
-            return page;
-        })
-    );
+        }
+    }
+    return routeObject;
+};
+
+const manifestToRouter = (manifest: IAppManifest<RouteExtraInfo>, requireModule: RequireModule) => {
+    const routes = manifest.routes.map((route) => {
+        const path =
+            '/' +
+            route.path
+                .map((part) => {
+                    if (part.kind === 'static') {
+                        return part.text;
+                    }
+                    return `:${part.name}`;
+                })
+                .join('/');
+        return pageToRoute(route, requireModule, path);
+    });
+    if (manifest.homeRoute) {
+        routes.push(pageToRoute(manifest.homeRoute, requireModule, '/'));
+    }
+    if (manifest.errorRoute) {
+        routes.push(pageToRoute(manifest.errorRoute, requireModule, 'errors/404'));
+    }
+    const Router = createRemixStub(routes);
 
     return Router;
 };
