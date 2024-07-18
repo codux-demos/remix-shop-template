@@ -34,5 +34,13 @@
       "~/*": "./src/*"
     }
   },
-  "svgLoader": "both"
+  "svgLoader": "both",
+  "build": {
+    "run": "yarn dev",
+    "externalModules": ["node_modules"],
+    "externalModulesToCopy": ["vite", "@remix-run", "vite-tsconfig-paths"],
+    "link": [],
+    "transform": ["app", "src"],
+    "serverPortRegexp": "localhost:(\\d+)"
+  }
 }

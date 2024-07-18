@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
     defineApp,
     type IAppManifest,
@@ -9,7 +9,7 @@ import {
     IReactAppProps,
     PageInfo,
 } from '@wixc3/app-core';
-import { Outlet } from '@remix-run/react';
+import { Outlet, useLocation } from '@remix-run/react';
 import { createRemixStub } from '@remix-run/testing';
 import { LoaderFunction } from '@remix-run/node';
 type RouteObject = Parameters<typeof createRemixStub>[0][0];
@@ -19,12 +19,14 @@ const createEl = React.createElement;
 const pageToRoute = (
     page: PageInfo<RouteExtraInfo>,
     requireModule: RequireModule,
+    setUri: (uri: string) => void,
     path?: string
 ) => {
     const { Component, loader } = getLazyCompAndLoader(
         page.pageModule,
         page.pageExportName || 'default',
-        requireModule
+        requireModule,
+        setUri
     );
 
     let routeObject: RouteObject = {
@@ -38,6 +40,7 @@ const pageToRoute = (
                 layout.layoutModule,
                 layout.layoutExportName || 'default',
                 requireModule,
+                setUri,
                 layout.layoutExportName === 'Layout'
             );
             routeObject = {
@@ -51,7 +54,11 @@ const pageToRoute = (
     return routeObject;
 };
 
-const manifestToRouter = (manifest: IAppManifest<RouteExtraInfo>, requireModule: RequireModule) => {
+const manifestToRouter = (
+    manifest: IAppManifest<RouteExtraInfo>,
+    requireModule: RequireModule,
+    setUri: (uri: string) => void
+) => {
     const routes = manifest.routes.map((route) => {
         const path =
             '/' +
@@ -63,13 +70,13 @@ const manifestToRouter = (manifest: IAppManifest<RouteExtraInfo>, requireModule:
                     return `:${part.name}`;
                 })
                 .join('/');
-        return pageToRoute(route, requireModule, path);
+        return pageToRoute(route, requireModule, setUri, path);
     });
     if (manifest.homeRoute) {
-        routes.push(pageToRoute(manifest.homeRoute, requireModule, '/'));
+        routes.push(pageToRoute(manifest.homeRoute, requireModule, setUri, '/'));
     }
     if (manifest.errorRoute) {
-        routes.push(pageToRoute(manifest.errorRoute, requireModule, 'errors/404'));
+        routes.push(pageToRoute(manifest.errorRoute, requireModule, setUri, 'errors/404'));
     }
     const Router = createRemixStub(routes);
 
@@ -81,72 +88,114 @@ export const getLazyCompAndLoader = (
     filePath: string,
     compExportName: string,
     requireModule: RequireModule,
+    setUri: (uri: string) => void,
     wrapWithOutlet = false
 ) => {
     const key = `${filePath}:${compExportName}`;
     let module = loadedModules.get(key);
     if (!module) {
-        module = lazyCompAndLoader(filePath, compExportName, requireModule, wrapWithOutlet);
+        module = lazyCompAndLoader(filePath, compExportName, requireModule, setUri, wrapWithOutlet);
         loadedModules.set(key, module);
     }
     return module;
 };
 
+interface Dispatcher<T> {
+    getState: () => T;
+    setState: (newValue: T) => void;
+    subscribe: (listener: (newValue: T) => void) => () => void;
+}
+function createDispatcher<T>(value: T): Dispatcher<T> {
+    const listeners = new Set<(newValue: T) => void>();
+    return {
+        getState: () => value,
+        setState: (newValue: T) => {
+            value = newValue;
+            listeners.forEach((listener) => listener(value));
+        },
+        subscribe: (listener: (newValue: T) => void) => {
+            listeners.add(listener);
+            return () => {
+                listeners.delete(listener);
+            };
+        },
+    };
+}
+function useDispatcher<T>(dispatcher: Dispatcher<T>) {
+    const [state, setState] = React.useState(dispatcher.getState());
+    React.useEffect(() => {
+        return dispatcher.subscribe(setState);
+    }, [dispatcher]);
+    return state;
+}
+
+function PageComp<ExportName extends string>({
+    module,
+    compExportName,
+    filePath,
+    wrapWithOutlet,
+    setUri,
+}: {
+    module: Dispatcher<IResults<unknown>>;
+    compExportName: ExportName;
+    filePath: string;
+    wrapWithOutlet: boolean;
+    setUri: (uri: string) => void;
+}) {
+    const currentModule = useDispatcher(module);
+
+    const uri = useLocation().pathname;
+    useEffect(() => {
+        setUri(uri.slice(1));
+    }, [setUri, uri]);
+
+    if (currentModule.errorMessage) {
+        return <div>{currentModule.errorMessage}</div>;
+    }
+    const Page = (
+        currentModule.results as {
+            [key in ExportName]: React.ComponentType<{ children?: React.ReactNode }>;
+        }
+    )[compExportName];
+
+    if (!Page) {
+        return (
+            <div>
+                {compExportName} export not found at {filePath}{' '}
+            </div>
+        );
+    }
+    if (wrapWithOutlet) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const Layout = Page as any;
+        return createEl(Layout, {}, [createEl(Outlet, {})]);
+    }
+    return createEl(Page);
+}
 function lazyCompAndLoader<ExportName extends string>(
     filePath: string,
     compExportName: ExportName,
     requireModule: RequireModule,
+    setUri: (uri: string) => void,
     wrapWithOutlet = false
 ) {
     const Component = React.lazy(async () => {
-        let updateModule: ((newModule: IResults<unknown>) => void) | undefined;
+        let updateModule: ((newModule: IResults<unknown>) => void) | undefined = undefined;
         const { moduleResults } = requireModule(filePath, (newResults) => {
             updateModule?.(newResults);
         });
         const initialyLoadedModule = await moduleResults;
-
-        const PageComp = () => {
-            // const [updatedModule, setModule] =
-            //     React.useState<IResults<unknown>>(initialyLoadedModule);
-            // const isDisposed = React.useRef(false);
-            // React.useEffect(() => {
-            //     return () => {
-            //         isDisposed.current = true;
-            //     };
-            // }, []);
-            // const updateModuleIfNotDisposed = (newModule: IResults<unknown>) => {
-            //     if (!isDisposed.current) {
-            //         setModule(newModule);
-            //     }
-            // };
-            // updateModule = updateModuleIfNotDisposed;
-            const current = initialyLoadedModule || module;
-            if (current.errorMessage) {
-                return <div>{current.errorMessage}</div>;
-            }
-            const Page = (
-                initialyLoadedModule.results as {
-                    [key in ExportName]: React.ComponentType<{ children?: React.ReactNode }>;
-                }
-            )[compExportName];
-
-            if (!Page) {
-                return (
-                    <div>
-                        {compExportName} export not found at {filePath}{' '}
-                    </div>
-                );
-            }
-            if (wrapWithOutlet) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const Layout = Page as any;
-                return createEl(Layout, {}, [createEl(Outlet)]);
-            }
-            return createEl(Page);
-        };
+        const dispatcher = createDispatcher(initialyLoadedModule);
+        updateModule = (newModule) => dispatcher.setState(newModule);
         return {
             default: () => {
-                return createEl(PageComp);
+                return createEl(PageComp, {
+                    module: dispatcher,
+                    compExportName,
+                    filePath,
+                    wrapWithOutlet,
+                    setUri,
+                });
             },
         };
     });
@@ -183,10 +232,10 @@ const routePathId = (path: RouteInfo['path']) => {
 };
 
 export default defineApp<RouteExtraInfo>({
-    App: ({ manifest, requireModule, uri }: IReactAppProps<RouteExtraInfo>) => {
+    App: ({ manifest, requireModule, uri, setUri }: IReactAppProps<RouteExtraInfo>) => {
         const App = useMemo(
-            () => manifestToRouter(manifest, requireModule),
-            [manifest, requireModule]
+            () => manifestToRouter(manifest, requireModule, setUri),
+            [manifest, requireModule, setUri]
         );
 
         return (
