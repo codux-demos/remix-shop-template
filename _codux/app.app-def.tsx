@@ -168,7 +168,7 @@ function PageComp<ExportName extends string>({
     if (wrapWithOutlet) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const Layout = Page as any;
-        return createEl(Layout, {}, [createEl(Outlet, {})]);
+        return createEl(Layout, {}, createEl(Outlet));
     }
     return createEl(Page);
 }
@@ -432,6 +432,16 @@ const aPage = (
         {
             layoutModule: rootPath,
             layoutExportName: 'Layout',
+        },
+    ],
+    editablePoints: [
+        {
+            title: 'Data Loader',
+            exportName: 'loader',
+        },
+        {
+            title: 'Page Settings',
+            exportName: 'meta',
         },
     ],
     extraData: { rendereredRoutes: renderedRoutes },
