@@ -13,7 +13,7 @@
     "deploy:prod": "netlify deploy --build --prod"
   },
   "dependencies": {
-    "@file-services/types": "^9.3.1",
+    "@file-services/types": "^9.4.1",
     "@netlify/functions": "^2.8.0",
     "@netlify/remix-adapter": "^2.4.0",
     "@radix-ui/react-icons": "^1.3.0",
@@ -41,7 +41,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
-    "@wixc3/app-core": "^2.6.0",
+    "@wixc3/app-core": "^3.0.1",
     "@wixc3/react-board": "^3.0.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
